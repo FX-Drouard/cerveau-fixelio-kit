@@ -4,6 +4,22 @@ Connecter Codex, Claude Code et les autres harness compatibles MCP à votre prop
 
 Les connexions réseau du pont acceptent exclusivement `https://memoire.fixelio.fr/mcp`, avec certificat TLS vérifié, sans suivre les redirections. Stdio est un échange local entre votre application IA et le pont ; le pont contacte le NAS en HTTPS.
 
+## Installation locale recommandée (version 2.0)
+
+Après avoir créé la clé et décompressé le kit, ouvrez un terminal **sur l’appareil à connecter** :
+
+```sh
+node /CHEMIN_ABSOLU_DU_KIT/scripts/setup.mjs --profile personnel --tenant UUID_DU_TENANT --client codex
+```
+
+Remplacez `codex` par `claude` pour Claude Code, ou `other` pour obtenir la commande à configurer dans un autre client MCP. Le programme vérifie le tenant et les droits, demande la clé en saisie masquée, l’enregistre dans le coffre système, installe le skill s’il manque et ajoute la connexion sans lancer d’IA. Les consignes existantes sont conservées. Un skill différent déjà présent n’est pas écrasé.
+
+Coffres : **Trousseau macOS**, **DPAPI lié au compte Windows**, **Secret Service sous Linux** (`secret-tool`, fourni selon la distribution par libsecret-tools). Si le coffre n’est pas disponible ou refuse l’accès, aucun stockage en clair n’est utilisé en remplacement. Utilisez un compte de système distinct par personne.
+
+La commande et le fichier de profil ne contiennent aucune clé. Le dossier du kit doit rester à un emplacement stable. Pour remplacer une clé en conservant sa file privée : relancez avec le même profil et ajoutez `--replace yes`. Pour un autre tenant, utilisez un autre nom de profil et une autre clé.
+
+La prise en charge des trois coffres est testée en simulations ; l’enregistrement/restitution macOS est aussi vérifié réellement. Windows et Linux restent à vérifier sur leurs postes réels. La présence du client Codex/Claude et Node.js22+ est requise pour l’installation correspondante.
+
 ## 1. Créer sa clé API
 
 1. Ouvrez **https://memoire.fixelio.fr** et connectez-vous avec votre identité Authentik autorisée.
@@ -22,7 +38,7 @@ Un autre utilisateur suit ces étapes avec **son compte et son tenant**. Il ne r
 
 Ce dépôt est public : tout le monde peut télécharger le kit. Cela ne donne aucun accès au cerveau. Chaque personne doit obtenir sa propre clé et ses permissions ; les mémoires restent sur le NAS.
 
-- Téléchargez `Cerveau-Fixelio-kit-1.1.0.zip` dans ce dépôt puis décompressez-le dans un dossier local stable.
+- Téléchargez `Cerveau-Fixelio-kit-2.0.0.zip` dans ce dépôt puis décompressez-le dans un dossier local stable.
 - Vérifiez son empreinte avec `SHA256SUMS` si vous transférez l’archive.
 - Les sources et les tests se trouvent dans cette archive. Node.js 22 ou plus récent est nécessaire **seulement pour le pont stdio et le diagnostic**, pas pour le skill ou l’accès MCP HTTP natif.
 - Une mise à jour du kit ne doit jamais remplacer vos clés ou les droits de votre tenant.
@@ -40,8 +56,8 @@ Utilise le kit du dépôt public https://github.com/FX-Drouard/cerveau-fixelio-k
 2. Le seul endpoint réseau permis est https://memoire.fixelio.fr/mcp. Conserve la validation du certificat TLS et refuse HTTP, les redirections et les contournements de certificat.
 3. Demande-moi le tenant attendu (nom et UUID), le nom du service/appareil et les droits souhaités si ces renseignements manquent. Les droits habituels sont memory:read et memory:write dans mon espace privé. Le coffre vault:read est optionnel et demande mon choix explicite. N’élargis pas les permissions d’une clé.
 4. Si je n’ai pas de clé, guide-moi dans Fixelio Mémoire : choisir mon tenant, Accès API & assistants, Créer un accès API, nom/service, permissions, espaces, secrets éventuels et expiration. Seul le propriétaire crée les accès. Ne crée pas de clé pour un autre tenant.
-5. Pour fournir la clé, ouvre ou prépare une saisie locale masquée ou le gestionnaire de secrets du client. Ne me demande jamais de la coller dans cette conversation. Ne mets aucune valeur de clé dans un prompt, un commit, une URL, une commande persistée ou un fichier partagé. Les variables attendues sont FIXELIO_BRAIN_TOKEN et FIXELIO_BRAIN_TENANT_ID. Pour une installation permanente, utilise le stockage privé du système ou du client ; le mode terminal du README est volontairement temporaire.
-6. Installe le skill générique au bon emplacement du harness et configure le MCP. Si le client sait utiliser Streamable HTTP avec une clé privée, utilise l’URL HTTPS. Sinon configure node /CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs avec les variables privées nécessaires. N’utilise pas le kit personnel de FX contenant son chemin Mac ou son tenant.
+5. Pour fournir la clé, ouvre ou prépare une saisie locale masquée ou le gestionnaire de secrets du client. Ne me demande jamais de la coller dans cette conversation. Ne mets aucune valeur de clé dans un prompt, un commit, une URL, une commande persistée ou un fichier partagé. Les variables attendues sont FIXELIO_BRAIN_TOKEN et FIXELIO_BRAIN_TENANT_ID. Pour une installation permanente, utilise scripts/setup.mjs et le coffre du système ; le mode par variables du README est volontairement temporaire.
+6. Utilise de préférence scripts/setup.mjs avec --profile, --tenant et --client ; ce programme réalise une saisie locale masquée et stocke la clé dans le coffre du système. L’utilisateur doit effectuer cette saisie dans son terminal local. Sinon installe le skill générique au bon emplacement du harness et configure le MCP. Si le client sait utiliser Streamable HTTP avec une clé privée, utilise l’URL HTTPS. Sinon configure node /CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs avec les variables privées nécessaires. N’utilise pas le kit personnel de FX contenant son chemin Mac ou son tenant.
 7. Ajoute, sans écraser mes consignes, la règle de continuité fournie ci-dessous dans les instructions persistantes de ce harness. Un skill et une connexion MCP sont deux éléments distincts.
 8. Vérifie réellement brain_context et le tenant attendu avant toute écriture. Effectue une recherche ciblée. Si l’espace privé n’est pas accessible en écriture, arrête la configuration de continuité et explique le droit manquant : ne publie pas mes synthèses dans un espace partagé.
 9. Consigne la réussite de cette installation avec record_action dans mon espace privé, sans secret. Ne lis pas le coffre pour tester. Donne-moi le statut vérifié, la façon de révoquer l’accès et les limites éventuelles. N’annonce pas une compatibilité ou une synchronisation que tu n’as pas vérifiée.
@@ -86,7 +102,7 @@ node 'C:\CHEMIN_DU_KIT\scripts\check.mjs'
 
 Lancez ensuite le client depuis ce PowerShell. La variable de processus contient la valeur nécessaire au client ; ce mécanisme n’est pas un coffre persistant. Pour retirer l’accès de cette session, fermez le client et effacez les variables ; pour invalider la clé partout, révoquez-la dans Fixelio Mémoire.
 
-Les applications graphiques déjà ouvertes ne récupèrent généralement pas les variables d’un terminal ultérieur. Utilisez leur gestionnaire de secrets ou un lanceur local adapté ; ne placez pas une valeur de clé dans leur configuration partageable. Le stockage permanent automatique par coffre système reste un prochain lot du kit.
+Les applications graphiques déjà ouvertes ne récupèrent généralement pas les variables d’un terminal ultérieur. Utilisez leur gestionnaire de secrets ou un lanceur local adapté ; ne placez pas une valeur de clé dans leur configuration partageable. Pour le stockage permanent, utilisez désormais setup.mjs ci-dessus ; les commandes de variables de cette section sont une alternative temporaire.
 
 ## 5. Codex
 
@@ -151,3 +167,37 @@ Les tests du kit couvrent le refus HTTP/TLS désactivé, l’UUID attendu avant 
 - [Claude Code : skills](https://code.claude.com/docs/en/skills)
 - [ChatGPT : serveur MCP personnalisé](https://developers.openai.com/api/docs/guides/custom-mcp-server)
 - [Standard MCP : transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+
+
+## Continuité pendant une coupure
+
+Avec un profil installé, les étapes record_action sont conservées dans une file locale AES-256-GCM avant envoi. La clé de chiffrement est dans le coffre du système, distincte de la valeur API. Les fichiers n’exposent pas le texte en clair ; la file est limitée à1000événements et10Mio. Les événements sont dédupliqués et supprimés localement seulement après confirmation explicite du serveur. Lors d’une reconnexion, cinq événements au plus sont repris pendant l’initialisation ou la vérification du contexte.
+
+Une réponse `queued: true, synced: false` signifie **en attente locale**, jamais « synchronisé ». Les erreurs de droits, conflits et altérations restent à résoudre ; les événements ne sont pas supprimés silencieusement. La file ne rejoue **aucune opération externe**, aucune lecture de coffre, aucune fusion, ni une synthèse susceptible de conflit.
+
+```sh
+node /CHEMIN_DU_KIT/scripts/pending.mjs personnel status
+node /CHEMIN_DU_KIT/scripts/pending.mjs personnel flush
+```
+
+Si le MCP n’a pas pu démarrer pendant la coupure, un harness disposant d’un terminal peut enregistrer uniquement une étape de journal via `pending.mjs personnel record`, avec les arguments record_action JSON sur stdin. L’IA doit annoncer l’attente locale. Aucun secret dans ces arguments. Les anciens clients par variables temporaires ne disposent pas de cette file persistante.
+
+## Contexte court et recherche
+
+Après brain_context, utiliser context_packet avec le sujet et un budget souhaité, plutôt que charger de grandes cartes historiques. Le serveur renvoie des extraits sourcés et bornés en volume ; le nombre de tokens reste une estimation indépendante du modèle. Lire une carte complète seulement si nécessaire. La recherche combine texte, sens et relations, selon l’état de l’index local.
+
+## Export ouvert et privé
+
+```sh
+node /CHEMIN_DU_KIT/scripts/export.mjs personnel /DOSSIER_NOUVEAU_D_EXPORT
+```
+
+Le programme vérifie le tenant, puis exporte les mémoires autorisées en JSONL et en fichiers Markdown identifiés par UUID. Les relations, versions et provenances restent dans le JSONL. Un marqueur de fin permet de détecter un export interrompu ; des fichiers partiels ne sont jamais annoncés comme complets. Le coffre et les clés sont exclus. Les textes d’origine nécessitent une permission sources:read et peuvent être téléchargés depuis l’interface web.
+
+Les fichiers exportés contiennent vos données privées : ne les commitez pas et ne les mettez pas dans ce dépôt public. Le JSONL conserve le contenu original ; les corps dans les Markdown sont présentés comme texte pour éviter l’interprétation de HTML ou d’images distantes provenant des mémoires.
+
+## Utiliser un secret sans l’afficher
+
+Le propriétaire peut configurer dans le site un service HTTPS, un secret autorisé et des méthodes/chemins exacts. L’IA utilise list_services puis operate_service pour une opération actuellement autorisée : le serveur injecte le secret et renvoie le résultat filtré. Ce n’est pas un proxy web général.
+
+Si l’opération requiert effectivement la valeur, read_vault_secret reste disponible selon le droit coffre de la clé, avec purpose:authorized_operation. Afficher le mot de passe dans le chat exige la demande actuelle explicite de son propriétaire pour ce secret précis. Aucune valeur de secret dans les cartes, synthèses ou journaux.
