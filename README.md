@@ -4,7 +4,7 @@ Connecter Codex, Claude Code et les autres harness compatibles MCP à votre prop
 
 Les connexions réseau du pont acceptent exclusivement `https://memoire.fixelio.fr/mcp`, avec certificat TLS vérifié, sans suivre les redirections. Stdio est un échange local entre votre application IA et le pont ; le pont contacte le NAS en HTTPS.
 
-## Installation locale recommandée (version 2.0)
+## Installation locale recommandée (version 2.0.1)
 
 Après avoir créé la clé et décompressé le kit, ouvrez un terminal **sur l’appareil à connecter** :
 
@@ -32,13 +32,13 @@ La prise en charge des trois coffres est testée en simulations ; l’enregistre
 8. Créez la clé et conservez-la dans votre gestionnaire de secrets. Elle n’est montrée qu’une fois. Ne la collez pas dans une conversation, une URL, une commande avec sa valeur en clair, GitHub ou un fichier partagé.
 9. Notez également l’UUID du tenant. Le pont le compare au résultat de `brain_context` avant de transmettre une opération métier. L’UUID n’est pas un mot de passe.
 
-Un autre utilisateur suit ces étapes avec **son compte et son tenant**. Il ne réutilise jamais la clé de FX. Le propriétaire d’un tenant ne reçoit pas la mémoire privée d’un autre membre. Changer le tenant actif du site ne change pas celui d’une clé déjà créée.
+Un autre utilisateur suit ces étapes avec **son compte et son tenant**. Chaque utilisateur utilise une clé qui lui est propre. Le propriétaire d’un tenant ne reçoit pas la mémoire privée d’un autre membre. Changer le tenant actif du site ne change pas celui d’une clé déjà créée.
 
 ## 2. Télécharger le kit
 
 Ce dépôt est public : tout le monde peut télécharger le kit. Cela ne donne aucun accès au cerveau. Chaque personne doit obtenir sa propre clé et ses permissions ; les mémoires restent sur le NAS.
 
-- Téléchargez `Cerveau-Fixelio-kit-2.0.0.zip` dans ce dépôt puis décompressez-le dans un dossier local stable.
+- Téléchargez `Cerveau-Fixelio-kit-2.0.1.zip` dans ce dépôt puis décompressez-le dans un dossier local stable.
 - Vérifiez son empreinte avec `SHA256SUMS` si vous transférez l’archive.
 - Les sources et les tests se trouvent dans cette archive. Node.js 22 ou plus récent est nécessaire **seulement pour le pont stdio et le diagnostic**, pas pour le skill ou l’accès MCP HTTP natif.
 - Une mise à jour du kit ne doit jamais remplacer vos clés ou les droits de votre tenant.
@@ -50,14 +50,14 @@ Copiez ce bloc dans Codex, Claude Code ou votre autre harness, **sans y ajouter 
 ```text
 Je veux connecter cette application IA à mon Cerveau Fixelio et installer son skill de continuité.
 
-Utilise le kit du dépôt public https://github.com/FX-Drouard/cerveau-fixelio-kit ou le dossier local que je te donne. Lis son README et son skill skills/cerveau-fixelio/SKILL.md. Ne lance aucune autre conversation ou agent pour cette installation.
+Utilise le kit Cerveau Fixelio du dépôt public contenant ce README, ou le dossier local que je te donne. Si ce lien ou ce dossier manque, demande-le-moi. Lis son README et son skill skills/cerveau-fixelio/SKILL.md. Ne lance aucune autre conversation ou agent pour cette installation.
 
 1. Identifie le harness et le système réellement utilisés. Préserve mes serveurs MCP, mes skills et mes instructions existants. Si un réglage existe déjà, explique la différence avant de le remplacer.
 2. Le seul endpoint réseau permis est https://memoire.fixelio.fr/mcp. Conserve la validation du certificat TLS et refuse HTTP, les redirections et les contournements de certificat.
 3. Demande-moi le tenant attendu (nom et UUID), le nom du service/appareil et les droits souhaités si ces renseignements manquent. Les droits habituels sont memory:read et memory:write dans mon espace privé. Le coffre vault:read est optionnel et demande mon choix explicite. N’élargis pas les permissions d’une clé.
 4. Si je n’ai pas de clé, guide-moi dans Fixelio Mémoire : choisir mon tenant, Accès API & assistants, Créer un accès API, nom/service, permissions, espaces, secrets éventuels et expiration. Seul le propriétaire crée les accès. Ne crée pas de clé pour un autre tenant.
 5. Pour fournir la clé, ouvre ou prépare une saisie locale masquée ou le gestionnaire de secrets du client. Ne me demande jamais de la coller dans cette conversation. Ne mets aucune valeur de clé dans un prompt, un commit, une URL, une commande persistée ou un fichier partagé. Les variables attendues sont FIXELIO_BRAIN_TOKEN et FIXELIO_BRAIN_TENANT_ID. Pour une installation permanente, utilise scripts/setup.mjs et le coffre du système ; le mode par variables du README est volontairement temporaire.
-6. Utilise de préférence scripts/setup.mjs avec --profile, --tenant et --client ; ce programme réalise une saisie locale masquée et stocke la clé dans le coffre du système. L’utilisateur doit effectuer cette saisie dans son terminal local. Sinon installe le skill générique au bon emplacement du harness et configure le MCP. Si le client sait utiliser Streamable HTTP avec une clé privée, utilise l’URL HTTPS. Sinon configure node /CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs avec les variables privées nécessaires. N’utilise pas le kit personnel de FX contenant son chemin Mac ou son tenant.
+6. Utilise de préférence scripts/setup.mjs avec --profile, --tenant et --client ; ce programme réalise une saisie locale masquée et stocke la clé dans le coffre du système. L’utilisateur doit effectuer cette saisie dans son terminal local. Sinon installe le skill générique au bon emplacement du harness et configure le MCP. Si le client sait utiliser Streamable HTTP avec une clé privée, utilise l’URL HTTPS. Sinon configure node /CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs avec les variables privées nécessaires. Utilise les chemins de cet appareil et le tenant que j’ai choisi.
 7. Ajoute, sans écraser mes consignes, la règle de continuité fournie ci-dessous dans les instructions persistantes de ce harness. Un skill et une connexion MCP sont deux éléments distincts.
 8. Vérifie réellement brain_context et le tenant attendu avant toute écriture. Effectue une recherche ciblée. Si l’espace privé n’est pas accessible en écriture, arrête la configuration de continuité et explique le droit manquant : ne publie pas mes synthèses dans un espace partagé.
 9. Consigne la réussite de cette installation avec record_action dans mon espace privé, sans secret. Ne lis pas le coffre pour tester. Donne-moi le statut vérifié, la façon de révoquer l’accès et les limites éventuelles. N’annonce pas une compatibilité ou une synchronisation que tu n’as pas vérifiée.
