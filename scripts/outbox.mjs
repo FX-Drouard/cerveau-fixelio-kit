@@ -1,0 +1,20 @@
+import {createCipheriv,createDecipheriv,createHmac,randomBytes,randomUUID} from 'node:crypto';
+import {readFile,readdir,writeFile,link,unlink,lstat} from 'node:fs/promises';
+import path from 'node:path';
+import {privateDirectory,readPrivate} from './credentials.mjs';
+function canonical(value){if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])]));return value;}
+export function createOutbox({dir,tenant,key,token}){
+ key=Buffer.from(key,'base64');if(key.length!==32)throw Error('Clé de file invalide.');const root=path.join(dir,'outbox');
+ const aad=id=>Buffer.from('Fixelio outbox v1\n'+tenant+'\n'+id);
+ function decode(id,raw){const value=JSON.parse(raw);if(value.v!==1||value.id!==id||value.tenant_id!==tenant)throw Error('Enveloppe de file invalide.');const d=createDecipheriv('aes-256-gcm',key,Buffer.from(value.n,'base64'));d.setAAD(aad(id));d.setAuthTag(Buffer.from(value.t,'base64'));return JSON.parse(Buffer.concat([d.update(Buffer.from(value.c,'base64')),d.final()]).toString('utf8'));}
+ async function entries(){await privateDirectory(root);return(await readdir(root)).filter(n=>/^[a-f0-9]{64}\.json$/.test(n)).sort();}
+ async function enqueue(args){if(['platform','conversation_id','action_id','title','body'].some(k=>typeof args[k]!=='string')||Object.keys(args).some(k=>!['platform','conversation_id','action_id','title','body','space_id'].includes(k)))throw Error('Événement de continuité invalide.');if(!/^[a-z][a-z0-9_-]{0,39}$/.test(args.platform||'')||!args.conversation_id||args.conversation_id.length>160||!args.action_id||args.action_id.length>160||!args.title||args.title.length>180||!args.body||args.body.length>6000)throw Error('Événement de continuité invalide.');const plain=JSON.stringify(canonical(args));if(plain.includes(token))throw Error('Une clé ne doit jamais entrer dans le journal.');const id=createHmac('sha256',key).update(tenant+'\n'+args.platform+'\n'+args.conversation_id+'\n'+args.action_id).digest('hex'),file=path.join(root,id+'.json');await privateDirectory(root);
+  try{const existing=decode(id,await readPrivate(file));if(JSON.stringify(canonical(existing))!==plain)throw Error('action_id déjà en attente avec un autre contenu.');return id;}catch(e){if(e.code!=='ENOENT')throw e;}
+  const files=await entries();if(files.length>=1000)throw Error('La file contient déjà 1000 événements ; reconnecter le cerveau.');let bytes=0;for(const name of files)bytes+=(await lstat(path.join(root,name))).size;if(bytes+Buffer.byteLength(plain)*2>10485760)throw Error('La file privée atteint sa limite de taille.');
+  const nonce=randomBytes(12),c=createCipheriv('aes-256-gcm',key,nonce);c.setAAD(aad(id));const encrypted=Buffer.concat([c.update(plain,'utf8'),c.final()]);const value=JSON.stringify({v:1,id,tenant_id:tenant,n:nonce.toString('base64'),c:encrypted.toString('base64'),t:c.getAuthTag().toString('base64')});const tmp=path.join(root,'.'+randomUUID()+'.tmp');
+  await writeFile(tmp,value,{mode:0o600,flag:'wx',flush:true});try{await link(tmp,file);}catch(e){if(e.code!=='EEXIST')throw e;const prior=decode(id,await readPrivate(file));if(JSON.stringify(canonical(prior))!==plain)throw Error('Conflit action_id en attente.');}finally{await unlink(tmp).catch(()=>{});}return id;
+ }
+ async function ack(id){if(!/^[a-f0-9]{64}$/.test(id))throw Error('Reçu invalide.');await unlink(path.join(root,id+'.json')).catch(e=>{if(e.code!=='ENOENT')throw e;});}
+ async function flush(send,{limit=20}={}){let synced=0;for(const file of(await entries()).slice(0,limit)){const id=file.slice(0,-5),args=decode(id,await readPrivate(path.join(root,file)));const result=await send({jsonrpc:'2.0',id:'outbox-'+id,method:'tools/call',params:{name:'record_action',arguments:args}});let data;try{data=JSON.parse(result?.result?.content?.find(c=>c.type==='text')?.text||'null');}catch{}if(result?.error||result?.result?.isError||!data?.id||data.action_id!==args.action_id)break;await ack(id);synced++;}return{synced,pending:(await entries()).length};}
+ return{enqueue,ack,flush,pending:async()=>(await entries()).length};
+}

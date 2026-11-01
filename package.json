@@ -1,0 +1,15 @@
+{
+  "name": "cerveau-fixelio-kit",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Kit MCP HTTPS et skill multi-tenant pour harness IA compatibles",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check-connection": "node scripts/check.mjs",
+    "package": "python3 scripts/package.py"
+  }
+}

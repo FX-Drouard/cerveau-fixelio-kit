@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cerveau Fixelio"
+  short_description: "Mémoire et continuité dans votre tenant autorisé"
+  default_prompt: "Utilise $cerveau-fixelio pour retrouver le contexte utile et enregistrer les étapes de notre travail."
+policy:
+  allow_implicit_invocation: true

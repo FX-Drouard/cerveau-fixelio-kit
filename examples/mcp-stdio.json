@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "cerveau_fixelio": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs"],
+      "env": {
+        "FIXELIO_BRAIN_TOKEN": "${FIXELIO_BRAIN_TOKEN}",
+        "FIXELIO_BRAIN_TENANT_ID": "${FIXELIO_BRAIN_TENANT_ID}"
+      }
+    }
+  }
+}

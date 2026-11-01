@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "cerveau_fixelio": {
+      "type": "http",
+      "url": "https://memoire.fixelio.fr/mcp",
+      "headers": { "Authorization": "Bearer ${FIXELIO_BRAIN_TOKEN}" }
+    }
+  }
+}

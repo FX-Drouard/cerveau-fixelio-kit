@@ -1,0 +1,7 @@
+# Remplacer les chemins par les chemins ABSOLUS du poste. Aucune clé dans ce fichier.
+[mcp_servers.cerveau_fixelio]
+command = "node"
+args = ["/CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs"]
+env_vars = ["FIXELIO_BRAIN_TOKEN", "FIXELIO_BRAIN_TENANT_ID"]
+startup_timeout_sec = 60
+tool_timeout_sec = 50

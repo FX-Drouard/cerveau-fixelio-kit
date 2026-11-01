@@ -4,7 +4,7 @@ Connecter Codex, Claude Code et les autres harness compatibles MCP à votre prop
 
 Les connexions réseau du pont acceptent exclusivement `https://memoire.fixelio.fr/mcp`, avec certificat TLS vérifié, sans suivre les redirections. Stdio est un échange local entre votre application IA et le pont ; le pont contacte le NAS en HTTPS.
 
-## Installation locale recommandée (version 2.0.1)
+## Installation locale recommandée (version 2.1.0)
 
 Après avoir créé la clé et décompressé le kit, ouvrez un terminal **sur l’appareil à connecter** :
 
@@ -24,7 +24,7 @@ La prise en charge des trois coffres est testée en simulations ; l’enregistre
 
 1. Ouvrez **https://memoire.fixelio.fr** et connectez-vous avec votre identité Authentik autorisée.
 2. Sélectionnez **votre tenant**. Seul son propriétaire peut créer les accès. Si votre compte ou votre tenant n’existe pas, demandez sa création et son rattachement à l’administrateur ; une connexion Microsoft 365 ne donne pas automatiquement accès à un tenant.
-3. Ouvrez **Accès API & assistants**, puis **Créer un accès API**.
+3. Ouvrez **Gérer mon tenant → Clés & connexions**, puis **Créer un accès API**.
 4. Donnez un nom reconnaissable, par exemple `Claude — PC portable` ; renseignez le service correspondant. Créez une clé distincte par appareil, service et tenant.
 5. Cochez `memory:read` et `memory:write` pour la continuité. Sélectionnez votre espace privé accessible en écriture : les journaux et synthèses de conversation exigent un espace privé autorisé. Vous pouvez sélectionner d’autres espaces, ou autoriser explicitement les espaces actuels et futurs.
 6. Le coffre est **facultatif**. Cochez `vault:read` seulement si vous le souhaitez ; sélectionnez les secrets autorisés ou, explicitement, le coffre actuel et futur dans les espaces permis. Un accès mémoire ne donne pas un accès coffre.
@@ -36,10 +36,10 @@ Un autre utilisateur suit ces étapes avec **son compte et son tenant**. Chaque 
 
 ## 2. Télécharger le kit
 
-Ce dépôt est public : tout le monde peut télécharger le kit. Cela ne donne aucun accès au cerveau. Chaque personne doit obtenir sa propre clé et ses permissions ; les mémoires restent sur le NAS.
+Ce dépôt est public : tout le monde peut télécharger le kit. Cela ne donne aucun accès au cerveau. Chaque personne doit obtenir sa propre clé et ses permissions ; le site et les données restent privés sur l’infrastructure Fixelio.
 
-- Téléchargez `Cerveau-Fixelio-kit-2.0.1.zip` dans ce dépôt puis décompressez-le dans un dossier local stable.
-- Vérifiez son empreinte avec `SHA256SUMS` si vous transférez l’archive.
+- Clonez les sources avec `git clone https://github.com/FX-Drouard/cerveau-fixelio-kit.git`, ou téléchargez le ZIP et son fichier `.sha256` depuis [la dernière release](https://github.com/FX-Drouard/cerveau-fixelio-kit/releases/latest), puis décompressez-le dans un dossier local stable.
+- Les ZIP ne sont pas versionnés dans le dépôt. Chaque push teste puis construit une archive des seuls fichiers source suivis ; la branche principale la publie dans une release publique. Aucun accès privé GitHub n’est nécessaire pour lire les sources ou télécharger cette release.
 - Les sources et les tests se trouvent dans cette archive. Node.js 22 ou plus récent est nécessaire **seulement pour le pont stdio et le diagnostic**, pas pour le skill ou l’accès MCP HTTP natif.
 - Une mise à jour du kit ne doit jamais remplacer vos clés ou les droits de votre tenant.
 
@@ -54,7 +54,7 @@ Utilise le kit Cerveau Fixelio du dépôt public contenant ce README, ou le doss
 
 1. Identifie le harness et le système réellement utilisés. Préserve mes serveurs MCP, mes skills et mes instructions existants. Si un réglage existe déjà, explique la différence avant de le remplacer.
 2. Le seul endpoint réseau permis est https://memoire.fixelio.fr/mcp. Conserve la validation du certificat TLS et refuse HTTP, les redirections et les contournements de certificat.
-3. Demande-moi le tenant attendu (nom et UUID), le nom du service/appareil et les droits souhaités si ces renseignements manquent. Les droits habituels sont memory:read et memory:write dans mon espace privé. Le coffre vault:read est optionnel et demande mon choix explicite. N’élargis pas les permissions d’une clé.
+3. Demande-moi le tenant attendu (nom et UUID), le nom du service/appareil et les droits souhaités si ces renseignements manquent. Les droits habituels sont memory:read et memory:write dans mon espace privé. Les droits coffre vault:read (lecture) et vault:write (enregistrement privé) sont indépendants, optionnels et demandent mon choix explicite. N’élargis pas les permissions d’une clé.
 4. Si je n’ai pas de clé, guide-moi dans Fixelio Mémoire : choisir mon tenant, Accès API & assistants, Créer un accès API, nom/service, permissions, espaces, secrets éventuels et expiration. Seul le propriétaire crée les accès. Ne crée pas de clé pour un autre tenant.
 5. Pour fournir la clé, ouvre ou prépare une saisie locale masquée ou le gestionnaire de secrets du client. Ne me demande jamais de la coller dans cette conversation. Ne mets aucune valeur de clé dans un prompt, un commit, une URL, une commande persistée ou un fichier partagé. Les variables attendues sont FIXELIO_BRAIN_TOKEN et FIXELIO_BRAIN_TENANT_ID. Pour une installation permanente, utilise scripts/setup.mjs et le coffre du système ; le mode par variables du README est volontairement temporaire.
 6. Utilise de préférence scripts/setup.mjs avec --profile, --tenant et --client ; ce programme réalise une saisie locale masquée et stocke la clé dans le coffre du système. L’utilisateur doit effectuer cette saisie dans son terminal local. Sinon installe le skill générique au bon emplacement du harness et configure le MCP. Si le client sait utiliser Streamable HTTP avec une clé privée, utilise l’URL HTTPS. Sinon configure node /CHEMIN_ABSOLU_DU_KIT/scripts/mcp-stdio.mjs avec les variables privées nécessaires. Utilise les chemins de cet appareil et le tenant que j’ai choisi.
@@ -201,3 +201,29 @@ Les fichiers exportés contiennent vos données privées : ne les commitez pas e
 Le propriétaire peut configurer dans le site un service HTTPS, un secret autorisé et des méthodes/chemins exacts. L’IA utilise list_services puis operate_service pour une opération actuellement autorisée : le serveur injecte le secret et renvoie le résultat filtré. Ce n’est pas un proxy web général.
 
 Si l’opération requiert effectivement la valeur, read_vault_secret reste disponible selon le droit coffre de la clé, avec purpose:authorized_operation. Afficher le mot de passe dans le chat exige la demande actuelle explicite de son propriétaire pour ce secret précis. Aucune valeur de secret dans les cartes, synthèses ou journaux.
+
+
+## Enregistrer un secret au coffre (service 0.7.0 et kit 2.1.0)
+
+Le propriétaire peut accorder **`vault:write`**, indépendamment de **`vault:read`**, à une nouvelle clé ou à une connexion existante dans **Gérer mon tenant → Clés & connexions → Autoriser l’écriture coffre**. Les anciennes clés n’obtiennent pas ce droit automatiquement. Le champ `vault_write` de `brain_context` indique le droit effectif. Rechargez la liste des outils MCP après changement.
+
+- `create_vault_secret` : `request_id` UUID stable, `conversation_id`, `purpose: explicit_user_request`, `name` (référence lisible sans secret), `value`, `space_id` facultatif et `expires_at` facultatif. La destination est exclusivement un espace privé autorisé du propriétaire dans le tenant de la clé.
+- `update_vault_secret` : `request_id` UUID stable, `conversation_id`, `purpose: explicit_user_request`, `id`, `expected_version` et `value`. Le droit couvre les secrets créés par cette clé et les cibles explicitement accordées ; la modification de tous les secrets privés existants/futurs exige l’option indépendante `vault_write_all` du propriétaire.
+- Réponse d’écriture : seulement `id`, `reference: vault:<id>`, `version`, `operation` et `replayed`. Aucune valeur renvoyée. `list_vault` donne les références/versions autorisées. La lecture de la valeur exige séparément `vault:read` et sa sélection.
+- Une relance réutilise exactement le même `request_id` et le même contenu : une seule écriture. Même identifiant avec un contenu différent : refus. Une mise à jour concurrente ou avec ancienne version : refus ; relire les métadonnées et demander explicitement la nouvelle modification. Deux créations distinctes peuvent porter le même nom, mais ne s’écrasent jamais.
+
+Client local de repli :
+
+```sh
+node scripts/brain.mjs --profile personnel vault-create < /CHEMIN_PRIVE/demande.json
+node scripts/brain.mjs --profile personnel vault-update < /CHEMIN_PRIVE/modification.json
+node scripts/brain.mjs --profile personnel vault-list
+```
+
+Le JSON privé contient les champs ci-dessus ; son fichier doit avoir des permissions privées et être supprimé par son propriétaire après confirmation. Il n’entre jamais dans ce dépôt. La valeur est transmise par **entrée standard**, jamais en argument ou dans un prompt de configuration. Ne pas utiliser un `echo` contenant le secret dans une commande conservée dans l’historique. La file hors ligne de continuité ne stocke pas les demandes de coffre ; en cas de doute réseau, relancer soi-même avec le même identifiant.
+
+Le serveur ne journalise ni les arguments ni les valeurs et chiffre avant l’écriture SQL. Le client MCP ou le fournisseur IA peut conserver ses propres conversations/appels : ce kit ne contrôle pas ces traces externes. Préférer la saisie locale pour un secret qui ne doit pas entrer dans une conversation. Une autorisation d’enregistrement ne vaut pas autorisation d’agir sur le service concerné.
+
+## Construire le ZIP depuis les sources
+
+`npm test` puis `python3 scripts/package.py` dans un clone Git. Le ZIP et son empreinte sont produits dans `dist/`. Le script part d’une liste blanche de fichiers suivis, refuse liens symboliques, chemins dangereux et signatures de clés privées/jetons, et inclut un manifeste d’intégrité avec le commit source. GitHub Actions exécute les mêmes tests et publie les fichiers en release ; les autres branches produisent une prérelease. Aucun ZIP n’est commité.
