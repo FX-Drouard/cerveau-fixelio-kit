@@ -4,7 +4,7 @@ Connecter Codex, Claude Code et les autres harness compatibles MCP à votre prop
 
 Les connexions réseau du pont acceptent exclusivement `https://memoire.fixelio.fr/mcp`, avec certificat TLS vérifié, sans suivre les redirections. Stdio est un échange local entre votre application IA et le pont ; le pont contacte le NAS en HTTPS.
 
-## Installation locale recommandée (version 2.1.0)
+## Installation locale recommandée (version 2.1.1)
 
 Après avoir créé la clé et décompressé le kit, ouvrez un terminal **sur l’appareil à connecter** :
 
@@ -203,12 +203,12 @@ Le propriétaire peut configurer dans le site un service HTTPS, un secret autori
 Si l’opération requiert effectivement la valeur, read_vault_secret reste disponible selon le droit coffre de la clé, avec purpose:authorized_operation. Afficher le mot de passe dans le chat exige la demande actuelle explicite de son propriétaire pour ce secret précis. Aucune valeur de secret dans les cartes, synthèses ou journaux.
 
 
-## Enregistrer un secret au coffre (service 0.7.0 et kit 2.1.0)
+## Enregistrer un secret au coffre (service 0.7.1 et kit 2.1.1)
 
 Le propriétaire peut accorder **`vault:write`**, indépendamment de **`vault:read`**, à une nouvelle clé ou à une connexion existante dans **Gérer mon tenant → Clés & connexions → Autoriser l’écriture coffre**. Les anciennes clés n’obtiennent pas ce droit automatiquement. Le champ `vault_write` de `brain_context` indique le droit effectif. Rechargez la liste des outils MCP après changement.
 
 - `create_vault_secret` : `request_id` UUID stable, `conversation_id`, `purpose: explicit_user_request`, `name` (référence lisible sans secret), `value`, `space_id` facultatif et `expires_at` facultatif. La destination est exclusivement un espace privé autorisé du propriétaire dans le tenant de la clé.
-- `update_vault_secret` : `request_id` UUID stable, `conversation_id`, `purpose: explicit_user_request`, `id`, `expected_version` et `value`. Le droit couvre les secrets créés par cette clé et les cibles explicitement accordées ; la modification de tous les secrets privés existants/futurs exige l’option indépendante `vault_write_all` du propriétaire.
+- `update_vault_secret` : `request_id` UUID stable, `conversation_id`, `purpose: explicit_user_request`, `id`, `expected_version` et `value`. Le droit couvre les secrets créés par cette clé ; la modification de tous les secrets privés existants/futurs exige l’option indépendante `vault_write_all` du propriétaire.
 - Réponse d’écriture : seulement `id`, `reference: vault:<id>`, `version`, `operation` et `replayed`. Aucune valeur renvoyée. `list_vault` donne les références/versions autorisées. La lecture de la valeur exige séparément `vault:read` et sa sélection.
 - Une relance réutilise exactement le même `request_id` et le même contenu : une seule écriture. Même identifiant avec un contenu différent : refus. Une mise à jour concurrente ou avec ancienne version : refus ; relire les métadonnées et demander explicitement la nouvelle modification. Deux créations distinctes peuvent porter le même nom, mais ne s’écrasent jamais.
 
@@ -227,3 +227,5 @@ Le serveur ne journalise ni les arguments ni les valeurs et chiffre avant l’é
 ## Construire le ZIP depuis les sources
 
 `npm test` puis `python3 scripts/package.py` dans un clone Git. Le ZIP et son empreinte sont produits dans `dist/`. Le script part d’une liste blanche de fichiers suivis, refuse liens symboliques, chemins dangereux et signatures de clés privées/jetons, et inclut un manifeste d’intégrité avec le commit source. GitHub Actions exécute les mêmes tests et publie les fichiers en release ; les autres branches produisent une prérelease. Aucun ZIP n’est commité.
+
+La lecture globale `vault_all` ne donne jamais le droit de modifier les anciens secrets. Seule l’option indépendante `vault_write_all` l’accorde, dans les espaces privés autorisés.

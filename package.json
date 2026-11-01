@@ -1,6 +1,6 @@
 {
   "name": "cerveau-fixelio-kit",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "type": "module",
   "description": "Kit MCP HTTPS et skill multi-tenant pour harness IA compatibles",
